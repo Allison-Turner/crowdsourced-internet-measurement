@@ -1,50 +1,65 @@
 #!/bin/bash
 
+collect_sys_info=false
+
 # Retrieve date and set up log directory if it isn't there already
 today=$(date +"%Y-%m-%d-%H-%M-%S")
 
 if [ ! -d $HOME/measurement-logs ]; then
   mkdir $HOME/measurement-logs
+  collect_sys_info=true
 fi
 
 if [ ! -d $HOME/measurement-logs/sysinfo ]; then
   mkdir $HOME/measurement-logs/sysinfo
+  collect_sys_info=true
 fi
+
+mkdir $HOME/measurement-logs/$today
 
 
 ##### SYSTEM INFO #####
 
 cd $HOME/measurement-logs/sysinfo
-
 sysinfo=sysinfo_$today.log
 
-touch uname_$sysinfo
-sudo uname -a >> uname_$sysinfo 2>&1
+if [ "$collect_sys_info" = true ]; then
 
-touch lshw_$sysinfo
-sudo lshw >> lshw_$sysinfo 2>&1
+  touch uname_$sysinfo
+  sudo uname -a >> uname_$sysinfo 2>&1
 
-touch lscpu_$sysinfo
-sudo lscpu >> lscpu_$sysinfo 2>&1
+  touch lshw_$sysinfo
+  sudo lshw >> lshw_$sysinfo 2>&1
 
-touch lspci_$sysinfo
-sudo lspci >> lspci_$sysinfo 2>&1
+  touch lscpu_$sysinfo
+  sudo lscpu >> lscpu_$sysinfo 2>&1
 
-touch dmidecode_$sysinfo
-sudo dmidecode >> dmidecode_$sysinfo 2>&1
+  touch lspci_$sysinfo
+  sudo lspci >> lspci_$sysinfo 2>&1
+
+  touch dmidecode_$sysinfo
+  sudo dmidecode >> dmidecode_$sysinfo 2>&1
+
+fi
+
+cd $HOME/measurement-logs/$today
 
 touch tcp_metrics_$sysinfo
 sudo ip tcp_metrics >> tcp_metrics_$sysinfo 2>&1
 
 
-##### LOCAL AS LOOKUP #####
+##### LOCAL CONNECTION INFO #####
 
-##### CONNECTION PROVIDER #####
+cd $HOME/measurement-logs/$today
+
+connecinfo=connecinfo_$today.log
+touch $connecinfo
+curl ipinfo.io >> $connecinfo
 
 
 ##### IPERF #####
 
-cd $HOME/measurement-logs
+cd $HOME/measurement-logs/$today
 
 if [[ $(iperf3 --version) =~ "not found" ]]; then
    apt install iperf3
@@ -83,9 +98,15 @@ while  [ "$valid_iperf" = false ]; do
 
 done
 
+##### GET HOSTS #####
+
 
 ##### TRACEROUTE TO HOSTS #####
+cd $HOME/measurement-logs/$today
 
 
 ##### PINGS TO HOSTS WITH INCREMENTAL TTL #####
+cd $HOME/measurement-logs/$today
 
+
+exit 0
