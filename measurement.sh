@@ -99,7 +99,7 @@ while  [ "$valid_iperf" = false ]; do
 done
 
 ##### GET HOSTS #####
-
+readarray -t sites < sites.txt
 
 ##### TRACEROUTE TO HOSTS #####
 cd $HOME/measurement-logs/$today
