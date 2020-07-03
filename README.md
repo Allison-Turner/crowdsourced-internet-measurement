@@ -64,20 +64,37 @@ Topology core is given by .nodes and .links. Node metadata is given in .as and .
 * itdk-run-<date>.addrs contains the target addresses used for the ITDK run
 
 * itdk-run-<date>-dns-names.txt contains the DNS entries for every address used or discovered in measurement
-  * <timestamp>    <IP-address>    <DNS-name>
+```
+<timestamp>    <IP-address>    <DNS-name>
+```
 
 * .nodes
-  * Format: node <node_id>:   <i1>   <i2>   ...   <in>
+  * Format:
+```
+node <node_id>:   <i1>   <i2>   ...   <in>
+```
   * Example: node N33382:  4.71.46.6 192.8.96.6 0.4.233.32
 
 * .links
-  * link <link_id>:   <N1>:i1   <N2>:i2   [<N3>:[i3] .. [<Nm>:[im]]
+  * Format:
+```
+link <link_id>:   <N1>:i1   <N2>:i2   [<N3>:[i3] .. [<Nm>:[im]]
+```
 
 * .nodes.as
-  * node.AS   <node_id>   <AS>   <method>
+  * Format:
+```
+node.AS   <node_id>   <AS>   <method>
+```
 
 * .nodes.geo
-  * node.geo   <node_id>: <continent> <country> <region> <city> <latitude> <longitude>
+  * Format:
+```
+node.geo   <node_id>: <continent> <country> <region> <city> <latitude> <longitude>
+```
 
 * .ifaces
-  * <address> [<node_id>] [<link_id>] [T] [D]
+  * Format:
+```
+<address> [<node_id>] [<link_id>] [T] [D]
+```
