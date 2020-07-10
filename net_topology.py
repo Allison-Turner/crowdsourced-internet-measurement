@@ -1,3 +1,4 @@
+#!/usr/bin/python
 class Topology:
 
     def __init__(self, is_ipv4=True):

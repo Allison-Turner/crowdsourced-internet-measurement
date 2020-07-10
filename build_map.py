@@ -1,16 +1,12 @@
+#!/usr/bin/python
+
 from argparse import ArgumentParser
 from net_topology import Topology, Node, Alias, Link
+import cim_util
 import subprocess, datetime, re
-
 from time import strftime,localtime
-timestamp = strftime("%H-%M-%S-%d-%m-%Y", localtime())
-# timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%H-%M-%S-%d-%m-%Y")
 
-# IPv4 via midar-iffinder: .nodes + .links + .ifaces + .as + .geo
-# IPv6 via speedtrap: .nodes + .links + .as + .geo
-ipv4_topo_choice = "midar-iff"
-ipv6_topo_choice = "speedtrap"
-file_types = [".nodes", ".links", ".nodes.as", ".nodes.geo", ".ifaces"]
+timestamp = strftime("%H-%M-%S-%d-%m-%Y", localtime())
 
 # Set up command line argument parser
 parser = ArgumentParser(description="A program to parse CAIDA ITDK files into useful topology data structures")
@@ -26,17 +22,17 @@ def download_files(extension, location, day, month, year):
     download_log = open(location + "download" + timestamp + ".log", "a")
 
     # Download all files to listed folder location
-    for file in file_types:
-        download_log.write("Downloading " + ipv4_topo_choice + file + extension + "\n")
-        download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, "http://data.caida.org/datasets/topology/ark/ipv4/itdk/" + year + "-" + month + "/" + ipv4_topo_choice + file + extension ])
+    for file in cim_util.file_types:
+        download_log.write("Downloading " + cim_util.ipv4_topo_choice + file + extension + "\n")
+        download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, "http://data.caida.org/datasets/topology/ark/ipv4/itdk/" + year + "-" + month + "/" + cim_util.ipv4_topo_choice + file + extension ])
         download_cmd.communicate()
         download_log.write("\n")
 
 
-    for file in file_types:
+    for file in cim_util.file_types:
         if file != ".ifaces":
-            download_log.write("Downloading " + ipv6_topo_choice + file + extension + "\n")
-            download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, "http://data.caida.org/datasets/topology/ark/ipv4/itdk/" + year + "-" + month + "/" + ipv6_topo_choice + file + extension ])
+            download_log.write("Downloading " + cim_util.ipv6_topo_choice + file + extension + "\n")
+            download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, "http://data.caida.org/datasets/topology/ark/ipv4/itdk/" + year + "-" + month + "/" + cim_util.ipv6_topo_choice + file + extension ])
             download_cmd.communicate()
             download_log.write("\n")
 
@@ -61,9 +57,9 @@ def decompress(extension, location):
     if extension == ".bz2":
         # Decompress IPv4 archives
         decompress_log.write("IPv4 Archives\n")
-        for file in file_types:
-            decompress_log.write("Decompressing " + location + ipv4_topo_choice + file + ".bz2\n")
-            decompress_cmd = subprocess.Popen(["/usr/bin/bzip2", "-d", location + ipv4_topo_choice + file + ".bz2"])
+        for file in cim_util.file_types:
+            decompress_log.write("Decompressing " + location + cim_util.ipv4_topo_choice + file + ".bz2\n")
+            decompress_cmd = subprocess.Popen(["/usr/bin/bzip2", "-d", location + cim_util.ipv4_topo_choice + file + ".bz2"])
             decompress_cmd.communicate()
 
             decompress_log.write("Return Code: " + str(decompress_cmd.returncode) + "\n")
@@ -78,10 +74,10 @@ def decompress(extension, location):
 
         # Decompress IPv6 archives (no ifaces file for this topology)
         decompress_log.write("IPv6 Archives\n")
-        for file in file_types:
+        for file in cim_util.file_types:
             if file != ".ifaces":
-                decompress_log.write("Decompressing " + location + ipv6_topo_choice + file + ".bz2\n")
-                decompress_cmd = subprocess.Popen(["/usr/bin/bzip2", "-d", location + ipv6_topo_choice + file + ".bz2"])
+                decompress_log.write("Decompressing " + location + cim_util.ipv6_topo_choice + file + ".bz2\n")
+                decompress_cmd = subprocess.Popen(["/usr/bin/bzip2", "-d", location + cim_util.ipv6_topo_choice + file + ".bz2"])
                 decompress_cmd.communicate()
 
                 decompress_log.write("Return Code: " + str(decompress_cmd.returncode) + "\n")
@@ -114,8 +110,10 @@ def main():
         print("Decompressing files")
         decompress(args.compression_ext, args.folder_loc)
 
+    ip_pattern = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+
     # Open IPv4 nodes file to begin extracting node objects
-    ipv4_nodes = open(args.folder_loc + ipv4_topo_choice + file_types[0], "r")
+    ipv4_nodes = open(args.folder_loc + cim_util.ipv4_topo_choice + cim_util.file_types[0], "r")
 
     found = 0
 
@@ -155,11 +153,16 @@ def main():
         print("Node " + n.node_id + " has " + str(len(n.aliases)) + " aliases.")
         print("\n")
 
-    # ipv4_ifaces = open(args.folder_loc + ipv4_topo_choice + file_types[4], "r")
+    ipv4_ifaces = open(args.folder_loc + cim_util.ipv4_topo_choice + cim_util.file_types[4], "r")
 
-    # for line in ipv4_ifaces:
+    for line in ipv4_ifaces:
         # get iface entries
+        tokens = re.split("\s", line)
+        if ip_pattern.match(tokens[0]):
+            address = tokens[0]
+            num_tokens = len(tokens)
 
-    # ipv4_ifaces.close()
+
+    ipv4_ifaces.close()
 
 main()
