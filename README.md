@@ -8,73 +8,84 @@ Stage 1 aims to situate the tester on a global map of internet topology. We draw
 #### Result Suites ####
 We'll be using IPv4 Router Topology A and the IPv6 Router Topology. Topology B uses a more comprehensive alias resolution tactic that can also result in false positives. We choose Topology A over B to favor accuracy.
 
-* IPv4 Router Topology A (accurate alias resolution):
-  * midar-iff.nodes
-  * midar-iff.links
-  * midar-iff.nodes.as
-  * midar-iff.nodes.geo
-  * midar-iff.ifaces
+<details> 
+<summary> IPv4 Router Topology A (accurate alias resolution) </summary>
+<ul>
+ <li> midar-iff.nodes </li>
+ <li> midar-iff.links </li>
+ <li> midar-iff.nodes.as </li>
+ <li> midar-iff.nodes.geo </li>
+ <li> midar-iff.ifaces </li>
+</ul>
+</details>
 
+<details>
+<summary> IPv4 Router Topology B (comprehensive alias resolution) </summary>
+ <ul>
+  <li> kapar-midar-iff.nodes </li>
+  <li> kapar-midar-iff.links </li>
+  <li> kapar-midar-iff.nodes.as </li>
+  <li> kapar-midar-iff.nodes.geo </li>
+  <li> kapar-midar-iff.ifaces </li>
+</details>
 
-* IPv4 Router Topology B (comprehensive alias resolution):
-  * kapar-midar-iff.nodes
-  * kapar-midar-iff.links
-  * kapar-midar-iff.nodes.as
-  * kapar-midar-iff.nodes.geo
-  * kapar-midar-iff.ifaces
-
-
-* IPv6 Router Topology (speedtrap IPv6 alias resolution):
-  * speedtrap.nodes
-  * speedtrap.links
-  * speedtrap.nodes.as
-  * speedtrap.nodes.geo
+<details>
+<summary> IPv6 Router Topology (speedtrap IPv6 alias resolution) </summary>
+ <ul>
+  <li> speedtrap.nodes </li>
+  <li> speedtrap.links </li>
+  <li> speedtrap.nodes.as </li>
+  <li> speedtrap.nodes.geo </li>
+  </ul>
+</details>
 
 #### File Formats ####
 Topology core is given by .nodes and .links. Node metadata is given in .as and .geo. .ifaces attempts to reconstruct node interfaces based on alias resolution.
 
-* itdk-run-<date>.addrs contains the target addresses used by Ark monitors for the ITDK run
+<details>
+<summary> itdk-run-<date>.addrs </summary>
+ <p>contains the target addresses used by Ark monitors for the ITDK run </p>
+</details>
 
-* itdk-run-<date>-dns-names.txt contains the DNS entries for every address used or discovered in measurement
-  * Format:
-```
-<timestamp>    <IP-address>    <DNS-name>
-```
+<details>
+<summary> itdk-run-<date>-dns-names.txt </summary>
+ <p> Contains the DNS entries for every address used or discovered in measurement </p>
+ <p> Format: <code> [timestamp]    [IP-address]    [DNS-name] </code> </p>
+</details>
+ 
+<details>
+ <summary> .nodes </summary>
+  <p> Format: <code> node [node_id]:   [i1]   [i2]   ...   [in] </code> </p>
+  <p> Example: <code> node N33382:  4.71.46.6 192.8.96.6 0.4.233.32 </code> </p>
+</details>
 
-* .nodes
-  * Format:
-```
-node <node_id>:   <i1>   <i2>   ...   <in>
-```
-  * Example: node N33382:  4.71.46.6 192.8.96.6 0.4.233.32
+<details>
+ <summary> .links </summary>
+ <p> Format: <code> link [link_id]:   [N1]:i1   [N2]:i2   [[N3]:[i3] .. [[Nm]:[im]] </code> </p>
+ <p> Example: <code> link L104:  N242484:211.79.48.158 N1847:211.79.48.157 N5849773 </code> </p>
+</details>
 
-* .links
-  * Format:
-```
-link <link_id>:   <N1>:i1   <N2>:i2   [<N3>:[i3] .. [<Nm>:[im]]
-```
-  * Example:
+<details>
+ <summary> .nodes.as </summary>
+ <p> Format: <code> node.AS   [node_id]   [AS]   [method] </code> </p>
+ <p> Example: <code> node.AS N39 17645 election </code> </p>
+</details>
 
-* .nodes.as
-  * Format:
-```
-node.AS   <node_id>   <AS>   <method>
-```
-  * Example:
+<details>
+ <summary> .nodes.geo </summary>
+ <p> Format: <code> node.geo   [node_id]: [continent] [country] [region] [city] [latitude] [longitude] </code> </p>
+ <p> Example: <code> node.geo N15:  ***  US  HI  Honolulu  21.3267  -157.8167 </code> </p>
+</details>
 
-* .nodes.geo
-  * Format:
-```
-node.geo   <node_id>: <continent> <country> <region> <city> <latitude> <longitude>
-```
-  * Example:
-
-* .ifaces
-  * Format:
-```
-<address> [<node_id>] [<link_id>] [T] [D]
-```
-  * Example:
+<details>
+ <summary> .ifaces </summary>
+ <p> Format: <code> [address] [node_id] [link_id] [T] [D] </code> </p>
+ <p> Example: <code> 1.0.174.107 N34980480 D </code> </p>
+ <p> Example: <code> 1.0.101.6 N18137917 L537067 T </code> </p>
+ <p> Example: <code> 1.28.124.57 N45020 </code> </p>
+ <p> Example: <code> 11.3.4.2 N18137965 L537125 T D </code> </p>
+ <p> Example: <code> 1.0.175.90 </code> </p>
+</details> 
 
 
 ### build_map.py ###
@@ -82,11 +93,15 @@ This file is reponsible for downloading, decompressing, and parsing CAIDA ITDK d
 <br><br>
 Note that we'll only build this map on a lab computer. It's unnecessary to perform the large and costly process of building the map data structures from the CAIDA data sets on a tester's computer. Also note that we reserve annotation of the topology with metadata like AS number for the analysis stage, so that we can make selective use of the data to mitigate the size of the database.
 
-* Requirements
-  * pyodbc Python library
-  * cim_util
-  * subprocess Python library
-  * re Python library
+<details>
+ <summary> Requirements </summary>
+ <ul>
+  <li> cim_util </li>
+  <li> <a href="https://github.com/mkleehammer/pyodbc/wiki">pyodbc</a> Python library </li>
+  <li> subprocess Python library </li>
+  <li> re Python library </li>
+ </ul>
+</details>
 
 <details>
 <summary> download_files(extension, location, day, month, year) </summary>
@@ -101,12 +116,12 @@ Note that we'll only build this map on a lab computer. It's unnecessary to perfo
 
 <details>
 <summary> read_in_nodes(ip_version, cursor) </summary>
-<p> Opens the .nodes file from the ITDK release specified. Assumes that the file has already been downloaded and decompressed in the specified folder location. Reads the file line by line. When it encounters a line of the format _node N\[node ID number\]: \[IP address\] \[IP address\]...\[IP address\]_, inserts each IP address + node ID pair into the appropriate map_address_to_node table according to IP version. Commits after every matching line. </p>
+<p> Opens the .nodes file from the ITDK release specified. Assumes that the file has already been downloaded and decompressed in the specified folder location. Reads the file line by line. When it encounters a line of the node entry format, inserts each IP address + node ID pair into the appropriate map_address_to_node table according to IP version. Commits after every matching line. </p>
 </details>
 
 <details>
 <summary> read_in_links(ip_version, cursor) </summary>
-<p> Opens the .links file from the ITDK release specified. Assumes that the file has already been downloaded and decompressed in the specified folder location. Reads the file line by line. When it encounters a line of the format _link L\[link ID number\]: N\[node ID number\]:\[node interface address\]   N\[node ID number\]:\[node interface address\]   \[ N\[node ID number\]:\[node interface address\] .. N\[node ID number\]:\[node interface address\] \]_, inserts each (link ID, node ID 1, node interface address 1, node ID 2, node interface address 2) tuple into the appropriate map_link_to_nodes table according to IP version. Commits after every matching line. </p>
+<p> Opens the .links file from the ITDK release specified. Assumes that the file has already been downloaded and decompressed in the specified folder location. Reads the file line by line. When it encounters a line of the link entry format inserts each (link ID, node ID 1, node interface address 1, node ID 2, node interface address 2) tuple into the appropriate map_link_to_nodes table according to IP version. Commits after every matching line. </p>
 </details>
 
 Right now, build_map.py uses command line arguments, detailed below, but we may rework the file later to draw from cim_util.py and have command line arguments as an option, instead of the primary source of required metadata.
@@ -129,38 +144,45 @@ python build_map.py -l $HOME/Downloads/ITDK-2019-01/ -w True
 
 ### probe_and_overlay.py ###
 
-* Requirements
-  * paris-traceroute tool
-    * needs root access
-  * pyodbc Python library
+<details>
+ <summary> Requirements </summary>
+ <ul>
+  <li> <a href="https://paris-traceroute.net/">paris-traceroute</a> tool
+    <ul>
+     <li> Needs root access </li>
+    </ul>
+  </li>
+  <li> <a href="https://github.com/mkleehammer/pyodbc/wiki">pyodbc</a> Python library </li>
+ </ul>
+</details>
 
 <details>
 <summary> Hop </summary>
-<p>\[Object Class\]</p>
+<p>[Object Class]</p>
 <ul>
-<li> hop_count \[Integer\]: number of network hops away from the source. </li>
-<li> ip \[String\]: IPv4 or IPv6 address of the network node discovered in this hop. * if blank. </li>
-<li> name \[String\]: name of network node. could be same as IP address. * if blank. </li>
-<li> times \[List of Floats\]: round-trip times of all successful probe packet and responses for this hop. * if blank. all probes use a set of three packets for each hop. </li>
+<li> hop_count [Integer]: number of network hops away from the source. </li>
+<li> ip [String]: IPv4 or IPv6 address of the network node discovered in this hop. * if blank. </li>
+<li> name [String]: name of network node. could be same as IP address. * if blank. </li>
+<li> times [List of Floats]: round-trip times of all successful probe packet and responses for this hop. * if blank. all probes use a set of three packets for each hop. </li>
 </ul>
 </details>
 
 <details>
 <summary> Trace_Path </summary>
-<p> \[Object Class\] </p>
+<p> [Object Class] </p>
 <p> This class stores all of the properties of a paris-traceroute output </p>
 <ul>
   <li>
     Trace Metadata
     <ul>
-      <li> dest_name \[String\]: domain name of trace destination </li>
-      <li> dest_addr \[String\]: IPv4 or IPv6 address of trace destination </li>
-      <li> hops_max \[Integer\]: maximum TTL of traceroute packets </li>
-      <li> pkt_size \[Integer\]: size of trace packets in bytes </li>
-      <li> ip_version \[String\]: "IPv4" or "IPv6" to mark which format Hop addresses are in </li>
+      <li> dest_name [String]: domain name of trace destination </li>
+      <li> dest_addr [String]: IPv4 or IPv6 address of trace destination </li>
+      <li> hops_max [Integer]: maximum TTL of traceroute packets </li>
+      <li> pkt_size [Integer]: size of trace packets in bytes </li>
+      <li> ip_version [String]: "IPv4" or "IPv6" to mark which format Hop addresses are in </li>
     </ul>
   </li>
-  <li> Hops \[List of Hop Objects\]: all nodes discovered on the route to the targeted domain. </li>
+  <li> Hops [List of Hop Objects]: all nodes discovered on the route to the targeted domain. </li>
 </ul>
 </details>
 
@@ -188,46 +210,71 @@ python build_map.py -l $HOME/Downloads/ITDK-2019-01/ -w True
 ### cim_util.py ###
 Contains various utilities: globally useful variables, regular expressions, and functions. All other files are written to pull specific variables from this file.
 
-* Requirements
-  * os Python library
-  * re Python library
-  * time Python library
+<details>
+ <summary> Requirements </summary>
+ <ul>
+  <li> os Python library </li>
+  <li> re Python library </li>
+  <li> time Python library </li>
+ </ul>
+</details>
 
-* Environment Properties
-  * user
-  * home
-  * s1_trace_log
+<details>
+ <summary> Environment Properties </summary>
+ <ul>
+  <li> user </li>
+  <li> home </li>
+  <li> s1_trace_log </li>
+ </ul>
+</details>
 
-* CAIDA ITDK File Specifications
-  * file_types
-    * .nodes
-    * .links
-    * .nodes.as
-    * .nodes.geo
-    * .ifaces
-  * topo_choice
-    * midar-iff or kapar-midar-iff for IPv4
-    * speedtrap for IPv6
+<details>
+ <summary> CAIDA ITDK File Specifications </summary>
+ <ul>
+  <li> file_types 
+   <ul>
+    <li> .nodes </li>
+    <li> .links </li>
+    <li> .nodes.as </li>
+    <li> .nodes.geo </li>
+    <li> .ifaces </li>
+   </ul> 
+  </li>
+  <li> topo_choice 
+   <ul>
+    <li> midar-iff or kapar-midar-iff for IPv4 </li>
+    <li> speedtrap for IPv6 </li>
+   </ul> 
+  </li>
+ </ul>
+</details>
 
-* Regular Expressions
-  * node_id_pattern
-  * node_entry_prefix
-  * link_id_pattern
-  * link_entry_prefix
-  * ipv4_pattern
-  * ipv6_pattern
+<details>
+ <summary> Regular Expressions </summary>
+ <ul>
+  <li> node_id_pattern </li>
+  <li> node_entry_prefix </li>
+  <li> link_id_pattern </li>
+  <li> link_entry_prefix </li>
+  <li> ipv4_pattern </li>
+  <li> ipv6_pattern </li>
+ </ul>
+</details>
 
-* ODBC Connection String Fields
-  * odbc_driver
-  * db_server
-  * db_name
-  * db_user
-  * db_pwd:
-    * Obviously we can't store passwords in text variables. Later I'll add some quiet command line prompts for password entry.
+<details>
+ <summary> ODBC Connection String Fields </summary>
+ <ul>
+  <li> odbc_driver </li>
+  <li> db_server </li>
+  <li> db_name </li>
+  <li> db_user </li>
+  <li> db_pwd 
+   <ul> <li> Obviously we can't store passwords in text variables. Later I'll add some quiet command line prompts for password entry. </li> </ul>
+  </li>
 
 <details>
 <summary> get_timestamp() </summary>
-<p> Returns a timestamp string to mark log files. Format: "\[hour\]-\[minute\]-\[second\]-\[day\]-\[month\]-\[year\]" </p>
+<p> Returns a timestamp string to mark log files. Format: "[hour]-[minute]-[second]-[day]-[month]-[year]" </p>
 </details>
 
 ## Stage 2 ##
