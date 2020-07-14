@@ -1,5 +1,5 @@
-#!/usr/bin/python
-import cim_util, os, subprocess, re
+#!/usr/bin/python3
+import cim_util, os, subprocess, re, pyodbc
 
 class Hop:
     def __init__(self, hop_num):
@@ -36,8 +36,8 @@ class Trace_Path:
         self.dest_addr = ""
         self.hops_max = 0
         self.pkt_size = 0
-        self.hops = []
         self.ip_version = "IPv4"
+        self.hops = []
 
     def add_hop(self, hop):
         self.hops.insert(int(hop.hop_count), hop)
@@ -66,9 +66,9 @@ class Trace_Path:
 def run_trace(ipv4):
     ptrace_log = open(cim_util.file, "a")
     if ipv4 is True:
-        ptrace = subprocess.Popen(["/usr/sbin/paris-traceroute", "-4", "google.com"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ptrace = subprocess.Popen(["/usr/sbin/paris-traceroute", "-4", "--src-port=51000", "--dst-port=80", "google.com"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     else:
-        ptrace = subprocess.Popen(["/usr/sbin/paris-traceroute", "-6", "google.com"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ptrace = subprocess.Popen(["/usr/sbin/paris-traceroute", "-6", "--src-port=51000", "--dst-port=80", "google.com"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     out = ptrace.stdout.read()
     err = ptrace.stderr.read()
@@ -103,13 +103,8 @@ def parse_traces():
     header_num = re.compile("\d{1,5}")
 
     # Hop Fields Regular Expressions
-    hop_num = re.compile("\d{1,3}")
     name = re.compile("(\w+[:|\.|-]*)+")
     time = re.compile("\d+\.\d+ms")
-    # IPv4 and IPv6 address Regular Expressions (source: https://gist.github.com/mnordhoff/2213179 )
-    ipv4_pattern = re.compile('^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$')
-    ipv6_pattern = re.compile('^(?:(?:[0-9A-Fa-f]{1,4}:){6}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|::(?:[0-9A-Fa-f]{1,4}:){5}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:){4}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:){3}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:(?:[0-9A-Fa-f]{1,4}:){,2}[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:){2}(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:(?:[0-9A-Fa-f]{1,4}:){,3}[0-9A-Fa-f]{1,4})?::[0-9A-Fa-f]{1,4}:(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:(?:[0-9A-Fa-f]{1,4}:){,4}[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))|(?:(?:[0-9A-Fa-f]{1,4}:){,5}[0-9A-Fa-f]{1,4})?::[0-9A-Fa-f]{1,4}|(?:(?:[0-9A-Fa-f]{1,4}:){,6}[0-9A-Fa-f]{1,4})?::)$')
-
 
     # Track parsed/parsing traces and hops
     traces = []
@@ -190,11 +185,31 @@ def parse_traces():
     return traces
 
 def match_nodes(trace):
-    print("placeholder for node match to CAIDA data")
+    cnxn = pyodbc.connect("DRIVER={" + cim_util.odbc_driver + "};SERVER=" + cim_util.db_server + ";DATABASE=" + cim_util.db_name + ";UID=" + cim_util.db_user + ";PWD=" + cim_util.db_pwd)
+    cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
+    cnxn.setencoding(encoding='utf-8')
+    cursor = cnxn.cursor()
+
     if trace.ip_version == "IPv4":
-        print("vfndjgb")
+        schema = "ipv4_topology"
     elif trace.ip_version == "IPv6":
-        print("udctgdcj")
+        schema = "ipv6_topology"
+
+    for hop in trace.hops:
+        if hop.ip != "*":
+            cursor.execute("SELECT * FROM " + schema + ".map_address_to_node WHERE address=" + str(hop.ip) + ";")
+            nodes = cursor.fetchall()
+            if len(nodes) > 1:
+                print("More than one match")
+                for n in nodes:
+                    print(str(n.node_id))
+            elif len(nodes) < 1:
+                print("No matches")
+            else:
+                print("Single match:" + str(nodes[0].node_id))
+
+
+    cnxn.close()
 
 def main():
     run_trace(True)

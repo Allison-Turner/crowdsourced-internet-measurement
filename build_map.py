@@ -1,12 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
+import cim_util, subprocess, datetime, re, pyodbc
 from argparse import ArgumentParser
-from net_topology import Topology, Node, Alias, Link
-import cim_util
-import subprocess, datetime, re
-from time import strftime,localtime
 
-timestamp = strftime("%H-%M-%S-%d-%m-%Y", localtime())
+timestamp = cim_util.get_timestamp()
 
 # Set up command line argument parser
 parser = ArgumentParser(description="A program to parse CAIDA ITDK files into useful topology data structures")
@@ -17,6 +14,7 @@ parser.add_argument("-a", "--day", dest="day", default="11", help="day of ITDK v
 parser.add_argument("-e", "--compression_ext", dest="compression_ext", default=".bz2", help="compression file extension for ITDK data archive files")
 parser.add_argument("-x", "--extract_files", dest="extract_files", default=False, help="Whether the data archive files need to be decompressed")
 parser.add_argument("-w", "--download_files", dest="download_files", default=False, help="Whether to download the data files from CAIDA's data server")
+
 
 def download_files(extension, location, day, month, year):
     download_log = open(location + "download" + timestamp + ".log", "a")
@@ -48,6 +46,7 @@ def download_files(extension, location, day, month, year):
     download_log.write("\n")
 
     download_log.close()
+
 
 def decompress(extension, location):
     # Prep log file
@@ -93,12 +92,69 @@ def decompress(extension, location):
     decompress_log.close()
 
 
+def read_in_nodes(ip_version, cursor):
+    # Open nodes file to begin extracting node objects
+    if ip_version == "IPv4":
+        nodes_file = open(args.folder_loc + cim_util.ipv4_topo_choice + cim_util.file_types[0], "r")
+
+    elif ip_version == "IPv6":
+        nodes_file = open(args.folder_loc + cim_util.ipv6_topo_choice + cim_util.file_types[0], "r")
+
+    found = 0
+
+    for line in nodes_file:
+        # Read in node objects
+        prefix = cim_util.node_entry_prefix.search(line)
+        if prefix is not None:
+            # Parse node ID
+            n_ID = cim_util.node_id_pattern.search(line).group()[1:]
+
+            # Split entry by whitespace
+            tokens = re.split("\s", line)
+
+            # Add node aliases
+            for token in tokens:
+                if ip_version == "IPv4" and cim_util.ipv4_pattern.match(token):
+                    cursor.execute("INSERT INTO ipv4_topology.map_address_to_node (address, node_id) VALUES (?, ?);", (token, n_ID))
+
+                elif ip_version == "IPv6" and cim_util.ipv6_pattern.match(token):
+                    cursor.execute("INSERT INTO ipv6_topology.map_address_to_node (address, node_id) VALUES (?, ?);", (token, n_ID))
+
+            # Save all new entries to database from this line
+            cursor.commit()
+
+            # Stop parsing after 100 records for development purposes
+            found += 1
+            if found > 100:
+                break
+
+    nodes_file.close()
+
+
+def read_in_links(ip_version, cursor):
+    if ip_version == "IPv4":
+        links_file = open(args.folder_loc + cim_util.ipv4_topo_choice + cim_util.file_types[1], "r")
+
+    elif ip_version == "IPv6":
+        links_file = open(args.folder_loc + cim_util.ipv6_topo_choice + cim_util.file_types[1], "r")
+
+    for line in links_file:
+        prefix = cim_util.link_entry_prefix.search(line)
+
+        if prefix is not None:
+            link_ID = cim_util.link_id_pattern.match(prefix.group()).group()
+
+            tokens = re.split("\s", line)
+            for token in tokens:
+                if cim_util.node_id_pattern.match(token):
+                    print()
+
+
+    links_file.close()
+
+
 def main():
     args = parser.parse_args()
-
-    # Initialize data structures
-    ipv4_net = Topology()
-    ipv6_net = Topology()
 
     # Download data archives
     if args.download_files:
@@ -110,59 +166,63 @@ def main():
         print("Decompressing files")
         decompress(args.compression_ext, args.folder_loc)
 
-    ip_pattern = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+    # Connect to database
+    cnxn = pyodbc.connect("DRIVER={" + cim_util.odbc_driver + "};SERVER=" + cim_util.db_server + ";DATABASE=" + cim_util.db_name + ";UID=" + cim_util.db_user + ";PWD=" + cim_util.db_pwd)
+    cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
+    cnxn.setencoding(encoding='utf-8')
+    cursor = cnxn.cursor()
 
-    # Open IPv4 nodes file to begin extracting node objects
-    ipv4_nodes = open(args.folder_loc + cim_util.ipv4_topo_choice + cim_util.file_types[0], "r")
+    # Create schemas and tables
+    cursor.execute("CREATE SCHEMA IF NOT EXISTS ipv4_topology AUTHORIZATION "+ cim_util.db_user +
+    """
+      CREATE TABLE map_address_to_node(
+        address inet,
+        node_id integer
+      )
+      CREATE TABLE map_link_to_nodes(
+        link_id integer,
+        node_id_1 integer,
+        address_1 inet, -- optional
+        node_id_2 integer,
+        address_2 inet, -- optional
+        relationship text
+      )
+      CREATE TABLE map_node_to_asn(
+        node_id integer,
+        as_number integer
+      );
 
-    found = 0
+    CREATE SCHEMA IF NOT EXISTS ipv6_topology AUTHORIZATION postgres
+      CREATE TABLE map_address_to_node(
+        address inet,
+        node_id integer
+      )
+      CREATE TABLE map_link_to_nodes(
+        link_id integer,
+        node_id_1 integer,
+        address_1 inet, -- optional
+        node_id_2 integer,
+        address_2 inet, -- optional
+        relationship text
+      )
+      CREATE TABLE map_node_to_asn(
+        node_id integer,
+        as_number integer
+      );
+    """);
 
-    print("Parsing .nodes file to add vertices")
-    for line in ipv4_nodes:
-        # read in node objects
-        prefix = re.search("\Anode N([0-9]+)", line)
-        if prefix != None:
-            # print("Current line: " + line)
+    # Read in IPv4 nodes
+    read_in_nodes("IPv4", cursor)
 
-            # Parse node ID
-            id_start = prefix.group().index("N")
-            n_ID = prefix.group()[(id_start + 1):]
-            node = Node(n_ID)
+    # Read in IPv6 nodes
+    read_in_nodes("IPv6", cursor)
 
-            # Split entry by whitespace
-            tokens = re.split("\s", line)
+    # Read in IPv4 links
+    read_in_links("IPv4", cursor)
 
-            # Add any token without a letter in it as an alias
-            for token in tokens:
-                containLetters = re.findall("[a-zA-Z]", token)
-                if len(containLetters) < 1 and len(token) > 0:
-                    node.add_alias(token)
-                    # print("New alias for node " + n_ID + " at " + token)
+    # Read in IPv6 links
+    read_in_links("IPv6", cursor)
 
-            ipv4_net.add_node(node)
-
-            print(node.node_id + " added")
-            found += 1
-            if found > 100:
-                break
-
-    ipv4_nodes.close()
-
-    # print("Found " + len(ipv4_net.vertices) + " nodes.")
-    for n in ipv4_net.vertices:
-        print("Node " + n.node_id + " has " + str(len(n.aliases)) + " aliases.")
-        print("\n")
-
-    ipv4_ifaces = open(args.folder_loc + cim_util.ipv4_topo_choice + cim_util.file_types[4], "r")
-
-    for line in ipv4_ifaces:
-        # get iface entries
-        tokens = re.split("\s", line)
-        if ip_pattern.match(tokens[0]):
-            address = tokens[0]
-            num_tokens = len(tokens)
-
-
-    ipv4_ifaces.close()
+    cnxn.close()
 
 main()
