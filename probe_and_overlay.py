@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import cim_util, os, subprocess, re, pyodbc
+import cim_util, subprocess, re, pyodbc
 
 class Hop:
     def __init__(self, hop_num):

@@ -7,11 +7,11 @@ timestamp = cim_util.get_timestamp()
 
 # Set up command line argument parser
 parser = ArgumentParser(description="A program to parse CAIDA ITDK files into useful topology data structures")
-parser.add_argument("-l", "--location", dest="folder_loc", required=True, help="location of ITDK data archive folder, up to and including the folder name")
-parser.add_argument("-y", "--year", dest="year", default="2019", help="year of ITDK version")
-parser.add_argument("-m", "--month", dest="month", default="01", help="month of ITDK version")
-parser.add_argument("-a", "--day", dest="day", default="11", help="day of ITDK version")
-parser.add_argument("-e", "--compression_ext", dest="compression_ext", default=".bz2", help="compression file extension for ITDK data archive files")
+parser.add_argument("-l", "--location", dest="folder_loc", default=cim_util.itdk_folder_loc, help="location of ITDK data archive folder, up to and including the folder name")
+parser.add_argument("-y", "--year", dest="year", default=cim_util.itdk_year, help="year of ITDK version")
+parser.add_argument("-m", "--month", dest="month", default=cim_util.itdk_month, help="month of ITDK version")
+parser.add_argument("-d", "--day", dest="day", default=cim_util.itdk_day, help="day of ITDK version")
+parser.add_argument("-e", "--compression_ext", dest="compression_ext", default=cim_util.compression_extension, help="compression file extension for ITDK data archive files")
 parser.add_argument("-x", "--extract_files", dest="extract_files", default=False, help="Whether the data archive files need to be decompressed")
 parser.add_argument("-w", "--download_files", dest="download_files", default=False, help="Whether to download the data files from CAIDA's data server")
 
@@ -142,13 +142,43 @@ def read_in_links(ip_version, cursor):
         prefix = cim_util.link_entry_prefix.search(line)
 
         if prefix is not None:
-            link_ID = cim_util.link_id_pattern.match(prefix.group()).group()
+            link_ID = cim_util.link_id_pattern.search(line).group()[1:]
+            n1_id = None
+            n1_addr = None
 
             tokens = re.split("\s", line)
             for token in tokens:
                 if cim_util.node_id_pattern.match(token):
                     print()
 
+                elif ip_version == "IPv4":
+                    if cim_util.ipv4_link_end.match(token):
+                        if n1_id is None:
+                            print()
+
+                        else:
+                            sides = re.split(":", token)
+                            n_ID = sides[0]
+                            addr = sides[1]
+                            print()
+
+                    elif cim_util.ipv4_pattern.match(token):
+                        print()
+
+                elif ip_version == "IPv6":
+                    if cim_util.ipv6_link_end.match(token):
+                        if n1_id is None:
+                            print()
+                        else:
+                            # can't split on : because that's part of IPv6 addresses
+                            n_ID = node_id_pattern.search(token)
+                            addr = token[n_ID.end() + 2:]
+                            ID = n_ID.group()
+                            cursor.execute("INSERT INTO ipv6_topology.map_link_to_nodes (link_id, node_id_1, address_1, node_id_2, address_2) VALUES (?, );", (link_ID, ))
+                            print()
+
+                    elif cim_util.ipv6_pattern.match(token):
+                        print()
 
     links_file.close()
 
