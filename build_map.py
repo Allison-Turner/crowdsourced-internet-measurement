@@ -182,6 +182,8 @@ def read_in_links(ip_version, cursor):
 
     links_file.close()
 
+def clean_db(cursor):
+    curosro.execute()
 
 def main():
     args = parser.parse_args()

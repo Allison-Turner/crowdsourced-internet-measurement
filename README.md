@@ -203,23 +203,23 @@ python build_map.py -l $HOME/Downloads/ITDK-2019-01/ -w True
 </details>
 
 <details>
-<summary> run_trace(ipv4) </summary>
+<summary> [Function] run_trace(ipv4) </summary>
 <p> Runs a paris-traceroute and directs all stdout and stderr to the file defined by cim_util.s1_trace_log. Adds a -4 or -6 flag to force IPv4 or IPv6 according to the boolean parameter. </p>
 <p> Note that this function requires an internet connection. </p>
 </details>
 
 <details>
-<summary> trim_address(token) </summary>
+<summary> [Function] trim_address(token) </summary>
 <p> Removes parentheses and commas from parse tokens that may be IP addresses so that parse_traces() can accurately match tokens. </p>
 </details>
 
 <details>
-<summary> parse_traces() </summary>
+<summary> [Function] parse_traces() </summary>
 <p> Opens and reads the s1_trace_log to parse Trace_Path objects. Returns a list of Trace_Path objects. Prints all contents of stderr. </p>
 </details>
 
 <details>
-<summary> match_nodes(trace) </summary>
+<summary> [Function] match_nodes(trace) </summary>
 <p> For every Hop in the Trace_Path given by parameter, selects rows from the map_address_to_node table of the appropriate topology schema to match paris-traceroute measured nodes to ITDK nodes. </p>
 </details>
 
