@@ -173,8 +173,7 @@ python build_map.py -l $HOME/Downloads/ITDK-2019-01/ -w True
 </details>
 
 <details>
-<summary> Hop </summary>
-<p>[Object Class]</p>
+<summary> [Object Class] Hop </summary>
 <ul>
 <li> hop_count [Integer]: number of network hops away from the source. </li>
 <li> ip [String]: IPv4 or IPv6 address of the network node discovered in this hop. * if blank. </li>
@@ -184,8 +183,7 @@ python build_map.py -l $HOME/Downloads/ITDK-2019-01/ -w True
 </details>
 
 <details>
-<summary> Trace_Path </summary>
-<p> [Object Class] </p>
+<summary> [Object Class] Trace_Path </summary>
 <p> This class stores all of the properties of a paris-traceroute output </p>
 <ul>
   <li>
@@ -292,6 +290,8 @@ Contains various utilities: globally useful variables, regular expressions, and 
   <li> node_entry_prefix </li>
   <li> link_id_pattern </li>
   <li> link_entry_prefix </li>
+  <li> ipv4_link_end </li>
+  <li> ipv6_link_end </li>
   <li> ipv4_pattern </li>
   <li> ipv6_pattern </li>
  </ul>
@@ -307,6 +307,7 @@ Contains various utilities: globally useful variables, regular expressions, and 
   <li> db_pwd
    <ul> <li> Obviously we can't store passwords in text variables. Later I'll add some quiet command line prompts for password entry. </li> </ul>
   </li>
+ </details>
 
 <details>
 <summary> get_timestamp() </summary>
@@ -316,8 +317,7 @@ Contains various utilities: globally useful variables, regular expressions, and 
 ### Topology Database ###
 
 <details>
-  <summary>ipv4_topology</summary>
-  <p>[Schema]</p>
+  <summary>[Schema] ipv4_topology</summary>
   <ul>
     <li> [Table] map_address_to_node
       <ul>
@@ -325,7 +325,7 @@ Contains various utilities: globally useful variables, regular expressions, and 
         <li> [Column, Type=integer] node_id </li>
       </ul>
     </li>
-
+   
     <li> [Table] map_link_to_nodes
     <ul>
       <li> [Column, Type=integer] link_id </li>
@@ -343,13 +343,12 @@ Contains various utilities: globally useful variables, regular expressions, and 
       <li> [Column, Type=integer] as_number </li>
     </ul>
     </li>
-
+    
   </ul>
 </details>
 
 <details>
-  <summary>ipv6_topology</summary>
-  <p>[Schema]</p>
+  <summary>[Schema] ipv6_topology</summary>
   <ul>
     <li> [Table] map_address_to_node
       <ul>
@@ -359,21 +358,21 @@ Contains various utilities: globally useful variables, regular expressions, and 
     </li>
 
     <li> [Table] map_link_to_nodes
-    <ul>
+     <ul>
       <li> [Column, Type=integer] link_id </li>
       <li> [Column, Type=integer] node_id_1 </li>
       <li> [Column, Type=inet] address_1 </li>
       <li> [Column, Type=integer] node_id_2 </li>
       <li> [Column, Type=inet] address_2 </li>
       <li> [Column, Type=text] relationship </li>
-    </ul>
+     </ul>
     </li>
 
     <li> [Table] map_node_to_asn
-    <ul>
+     <ul>
       <li> [Column, Type=integer] node_id </li>
       <li> [Column, Type=integer] as_number </li>
-    </ul>
+     </ul>
     </li>
 
   </ul>
