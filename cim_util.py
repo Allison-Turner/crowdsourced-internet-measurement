@@ -1,6 +1,10 @@
 #!/usr/bin/python3
-import os, re
+import os, re, subprocess
 from time import strftime,localtime
+
+# ITDK URL prefix
+ipv4_itdk_url = "http://publicdata.caida.org/datasets/topology/ark/ipv4/itdk/"
+ipv6_itdk_url = ""
 
 # environment metadata
 user = "allison-turner"
@@ -10,10 +14,11 @@ home = os.path.expanduser("~" + user)
 s1_trace_log = home + "/Desktop/" + "trace.log"
 
 # build_map.py metadata
-itdk_year = "2019"
+itdk_year = "2020"
 itdk_month = "01"
-itdk_day = "11"
-itdk_folder_loc = home + "/Downloads/ITDK-" + itdk_year + "-" + itdk_month + "/"
+itdk_day = "09"
+# itdk_folder_loc = home + "/Downloads/ITDK-" + itdk_year + "-" + itdk_month + "/"
+itdk_folder_loc = "/media/" + user + "/Backup Plus/ITDK-" + itdk_year + "-" + itdk_month + "/"
 compression_extension = ".bz2"
 
 # IPv4 via midar-iffinder: .nodes + .links + .ifaces + .as + .geo
@@ -43,6 +48,22 @@ ipv6_pattern = re.compile(ipv6_regex)
 ipv4_link_end = re.compile(node_id_regex + ":" + ipv4_regex)
 ipv6_link_end = re.compile(node_id_regex + ":" + ipv6_regex)
 
+# File Annotation Regular Expressions
+stdout = re.compile("STDOUT")
+stderr = re.compile("STDERR")
+divider = re.compile("((=)+)")
+whitespace = re.compile("\s")
+star = re.compile("\*")
+
+# Header Line and Fields Regular Expressions
+header = re.compile("\Atraceroute to (.)+")
+domain_name = re.compile("[a-zA-Z]+\.[com|org|edu|net]")
+header_num = re.compile("\d{1,5}")
+
+# Hop Fields Regular Expressions
+name = re.compile("(\w+[:|\.|-]*)+")
+time = re.compile("\d+\.\d+ms")
+
 # Properties for pyodbc connection string
 odbc_driver = "psqlOBDC"
 db_server = "localhost"
@@ -52,3 +73,16 @@ db_pwd = "postgres"
 
 def get_timestamp():
     return strftime("%H-%M-%S-%d-%m-%Y", localtime())
+
+def log_cmd_results(cmd, log):
+    log.write("Return Code: " + str(cmd.returncode) + "\n")
+
+    log.write("STDOUT\n")
+    log.write("==================================================\n")
+    log.write(str(cmd.stdout) + "\n")
+
+    log.write("STDERR\n")
+    log.write("==================================================\n")
+    log.write(str(cmd.stderr) + "\n")
+
+    log.write("\n")

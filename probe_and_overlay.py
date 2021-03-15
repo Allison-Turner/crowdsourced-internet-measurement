@@ -64,7 +64,8 @@ class Trace_Path:
         return print_string
 
 def run_trace(ipv4):
-    ptrace_log = open(cim_util.file, "a")
+    ptrace_log = open(cim_util.s1_trace_log, "a")
+
     if ipv4 is True:
         ptrace = subprocess.Popen(["/usr/sbin/paris-traceroute", "-4", "--src-port=51000", "--dst-port=80", "google.com"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     else:
@@ -90,22 +91,6 @@ def trim_address(token):
     return str(router_addr)
 
 def parse_traces():
-    # File Annotation Regular Expressions
-    stdout = re.compile("STDOUT")
-    stderr = re.compile("STDERR")
-    divider = re.compile("((=)+)")
-    whitespace = re.compile("\s")
-    star = re.compile("\*")
-
-    # Header Line and Fields Regular Expressions
-    header = re.compile("\Atraceroute to (.)+")
-    domain_name = re.compile("[a-zA-Z]+\.[com|org|edu|net]")
-    header_num = re.compile("\d{1,5}")
-
-    # Hop Fields Regular Expressions
-    name = re.compile("(\w+[:|\.|-]*)+")
-    time = re.compile("\d+\.\d+ms")
-
     # Track parsed/parsing traces and hops
     traces = []
     current_trace = -1
@@ -113,10 +98,10 @@ def parse_traces():
     # Are we currently in an stderr section?
     err = False
 
-    ptrace_log = open(cim_util.file, "r")
+    ptrace_log = open(cim_util.s1_trace_log, "r")
 
     for line in ptrace_log:
-        if header.match(line):
+        if cim_util.header.match(line):
             current_trace += 1
             current_hop = (-1)
             traces.append(Trace_Path())
@@ -124,7 +109,7 @@ def parse_traces():
             tokens = re.split("\s", line)
 
             for token in tokens:
-                if domain_name.match(token):
+                if cim_util.domain_name.match(token):
                     traces[current_trace].set_dest_name(token)
 
                 elif cim_util.ipv4_pattern.match(trim_address(token)):
@@ -135,7 +120,7 @@ def parse_traces():
                     traces[current_trace].set_ip_version("IPv6")
                     traces[current_trace].set_dest_addr(trim_address(token))
 
-                elif header_num.match(token):
+                elif cim_util.header_num.match(token):
                     if traces[current_trace].hops_max == 0:
                         traces[current_trace].set_hops_max(token)
 
@@ -148,16 +133,16 @@ def parse_traces():
             tokens = re.split("\s", line)
 
             for token in tokens:
-                if divider.match(token) or whitespace.match(token) or len(token) < 1:
+                if cim_util.divider.match(token) or cim_util.whitespace.match(token) or len(token) < 1:
                     continue
 
-                elif stdout.match(token):
+                elif cim_util.stdout.match(token):
                     err = False
 
-                elif stderr.match(token):
+                elif cim_util.stderr.match(token):
                     err = True
 
-                elif err is True and not divider.match(token) and len(token) > 0:
+                elif err is True and not cim_util.divider.match(token) and len(token) > 0:
                     print(token)
 
                 else:
@@ -166,13 +151,13 @@ def parse_traces():
                         current_hop += 1
                         traces[current_trace].add_hop(Hop(current_hop + 1))
 
-                    if time.match(token):
+                    if cim_util.time.match(token):
                         traces[current_trace].hops[current_hop].add_time(token)
 
                     elif cim_util.ipv4_pattern.match(trim_address(token)) or cim_util.ipv6_pattern.match(trim_address(token)):
                         traces[current_trace].hops[current_hop].set_hop_ip(token)
 
-                    elif name.match(token) and len(token) > 3:
+                    elif cim_util.name.match(token) and len(token) > 3:
                         traces[current_trace].hops[current_hop].set_hop_name(token)
                         set_name = True
 
@@ -220,7 +205,7 @@ def main():
         print("================================================================\n")
         print(p.to_string() + "\n")
 
-    for p in paths:
-        match_nodes(p)
+    # for p in paths:
+    #    match_nodes(p)
 
 main()

@@ -40,7 +40,7 @@ We'll be using IPv4 Router Topology A and the IPv6 Router Topology. Topology B u
 </details>
 
 #### File Formats ####
-Topology core is given by .nodes and .links. Node metadata is given in .as and .geo. .ifaces attempts to reconstruct node interfaces based on alias resolution.
+Topology core is given by .nodes and .links. Node metadata is given in .as and .geo. .ifaces attempts to reconstruct node interfaces based on alias resolution. All files are compressed in .bz2 format when downloaded from the data server.
 
 <details>
 <summary> itdk-run-[date].addrs </summary>
@@ -116,23 +116,23 @@ Note that we'll only build this map on a lab computer. It's unnecessary to perfo
 </details>
 
 <details>
-<summary> download_files(extension, location, day, month, year) </summary>
+<summary> [Function] download_files(extension, location, day, month, year) </summary>
 <p> wgets all of the files we need of a particular ITDK release from CAIDA's file servers. The release is defined by the day, month, and year, which are given as arguments. The file extension is written as a variable to ensure flexibility, but it's usually .bz2. Creates a log from wget's stdout and stderr in case of download issues. </p>
 <p> Note that this function requires an internet connection. </p>
 </details>
 
 <details>
-<summary> decompress(extension, location) </summary>
+<summary> [Function] decompress(extension, location) </summary>
 <p> Decompresses data archives, usually in .bz2 format. Creates a log from bzip2's stdout and stderr in case of problems unzipping the files. </p>
 </details>
 
 <details>
-<summary> read_in_nodes(ip_version, cursor) </summary>
+<summary> [Function] read_in_nodes(ip_version, cursor) </summary>
 <p> Opens the .nodes file from the ITDK release specified. Assumes that the file has already been downloaded and decompressed in the specified folder location. Reads the file line by line. When it encounters a line of the node entry format, inserts each IP address + node ID pair into the appropriate map_address_to_node table according to IP version. Commits after every matching line. </p>
 </details>
 
 <details>
-<summary> read_in_links(ip_version, cursor) </summary>
+<summary> [Function] read_in_links(ip_version, cursor) </summary>
 <p> Opens the .links file from the ITDK release specified. Assumes that the file has already been downloaded and decompressed in the specified folder location. Reads the file line by line. When it encounters a line of the link entry format inserts each (link ID, node ID 1, node interface address 1, node ID 2, node interface address 2) tuple into the appropriate map_link_to_nodes table according to IP version. Commits after every matching line. </p>
 </details>
 
@@ -142,9 +142,9 @@ You can run build_map.py without any command line arguments to use the values li
 | -------------------- | ---------------------------------------------------- | ----------------------------- |
 | [-h]                 | see all argument options                             |                               |
 | [-l FOLDER_LOC]      | folder path to archive files                         | $HOME/Downloads/ITDK-2019-01/ |
-| [-y YEAR]            | year of CAIDA measurements, in 20xx form             | 2019                          |
+| [-y YEAR]            | year of CAIDA measurements, in 20xx form             | 2020                          |
 | [-m MONTH]           | month of CAIDA measurements, in 01 or 12 form        | 01                            |
-| [-d DAY]             | day of CAIDA measurements, in 03 or 22 form          | 11                            |
+| [-d DAY]             | day of CAIDA measurements, in 03 or 22 form          | 09                            |
 | [-e COMPRESSION_EXT] | compression file extension                           | .bz2                          |
 | [-x EXTRACT_FILES]   | whether to decompress archive files                  | False                         |
 | [-w DOWNLOAD_FILES]  | whether to download data archives from CAIDA servers | False                         |
@@ -314,6 +314,11 @@ Contains various utilities: globally useful variables, regular expressions, and 
 <p> Returns a timestamp string to mark log files. Format: "[hour]-[minute]-[second]-[day]-[month]-[year]" </p>
 </details>
 
+<details>
+<summary> log_cmd_results(cmd, log) </summary>
+<p> Writes return code, stdout, and stderr to a log file that is assumed to be already created and opened for appending.</p>
+</details>
+
 ### Topology Database ###
 
 <details>
@@ -325,7 +330,6 @@ Contains various utilities: globally useful variables, regular expressions, and 
         <li> [Column, Type=integer] node_id </li>
       </ul>
     </li>
-   
     <li> [Table] map_link_to_nodes
     <ul>
       <li> [Column, Type=integer] link_id </li>
@@ -336,14 +340,12 @@ Contains various utilities: globally useful variables, regular expressions, and 
       <li> [Column, Type=text] relationship </li>
     </ul>
     </li>
-
     <li> [Table] map_node_to_asn
     <ul>
       <li> [Column, Type=integer] node_id </li>
       <li> [Column, Type=integer] as_number </li>
     </ul>
     </li>
-    
   </ul>
 </details>
 
@@ -356,7 +358,6 @@ Contains various utilities: globally useful variables, regular expressions, and 
         <li> [Column, Type=integer] node_id </li>
       </ul>
     </li>
-
     <li> [Table] map_link_to_nodes
      <ul>
       <li> [Column, Type=integer] link_id </li>
@@ -367,14 +368,12 @@ Contains various utilities: globally useful variables, regular expressions, and 
       <li> [Column, Type=text] relationship </li>
      </ul>
     </li>
-
     <li> [Table] map_node_to_asn
      <ul>
       <li> [Column, Type=integer] node_id </li>
       <li> [Column, Type=integer] as_number </li>
      </ul>
     </li>
-
   </ul>
 </details>
 

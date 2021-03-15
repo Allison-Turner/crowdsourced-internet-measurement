@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import cim_util, subprocess, datetime, re, pyodbc
+import os, cim_util, subprocess, datetime, re, pyodbc
 from argparse import ArgumentParser
 
 timestamp = cim_util.get_timestamp()
@@ -16,78 +16,66 @@ parser.add_argument("-x", "--extract_files", dest="extract_files", default=False
 parser.add_argument("-w", "--download_files", dest="download_files", default=False, help="Whether to download the data files from CAIDA's data server")
 
 
-def download_files(extension, location, day, month, year):
-    download_log = open(location + "download" + timestamp + ".log", "a")
+def download_files(ipv4, ipv6, extension, location, day, month, year):
+    if not os.path.exists(location):
+        os.mkdir(location)
 
-    # Download all files to listed folder location
-    for file in cim_util.file_types:
-        download_log.write("Downloading " + cim_util.ipv4_topo_choice + file + extension + "\n")
-        download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, "http://data.caida.org/datasets/topology/ark/ipv4/itdk/" + year + "-" + month + "/" + cim_util.ipv4_topo_choice + file + extension ])
-        download_cmd.communicate()
-        download_log.write("\n")
+    download_log = open(location + "download" + timestamp + ".log", "a+")
 
-
-    for file in cim_util.file_types:
-        if file != ".ifaces":
-            download_log.write("Downloading " + cim_util.ipv6_topo_choice + file + extension + "\n")
-            download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, "http://data.caida.org/datasets/topology/ark/ipv4/itdk/" + year + "-" + month + "/" + cim_util.ipv6_topo_choice + file + extension ])
+    if ipv4:
+        # Download all files to listed folder location
+        for file in cim_util.file_types:
+            download_log.write("Downloading " + cim_util.ipv4_topo_choice + file + extension + "\n")
+            download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, cim_util.ipv4_itdk_url + year + "-" + month + "/" + cim_util.ipv4_topo_choice + file + extension ])
             download_cmd.communicate()
-            download_log.write("\n")
+            cim_util.log_cmd_results(download_cmd, download_log)
 
+    if ipv6:
+        for file in cim_util.file_types:
+            if file != ".ifaces":
+                download_log.write("Downloading " + cim_util.ipv6_topo_choice + file + extension + "\n")
+                download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, cim_util.ipv4_itdk_url + year + "-" + month + "/" + cim_util.ipv6_topo_choice + file + extension ])
+                download_cmd.communicate()
+                cim_util.log_cmd_results(download_cmd, download_log)
 
-    download_log.write("Downloading itdk-run-" + year + month + day + "-dns-names.txt" + extension + "\n")
-    download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, "http://data.caida.org/datasets/topology/ark/ipv4/itdk/" + year + "-" + month + "/" + "itdk-run-" + year + month + day + "-dns-names.txt" + extension ])
-    download_cmd.communicate()
-    download_log.write("\n")
+    if ipv4:
+        download_log.write("Downloading itdk-run-" + year + month + day + "-dns-names.txt" + extension + "\n")
+        download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, cim_util.ipv4_itdk_url + year + "-" + month + "/" + "itdk-run-" + year + month + day + "-dns-names.txt" + extension ])
+        download_cmd.communicate()
+        cim_util.log_cmd_results(download_cmd, download_log)
 
-    download_log.write("Downloading itdk-run-" + year + month + day + ".addrs" + extension + "\n")
-    download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, "http://data.caida.org/datasets/topology/ark/ipv4/itdk/" + year + "-" + month + "/" + "itdk-run-" + year + month + day + ".addrs" + extension ])
-    download_cmd.communicate()
-    download_log.write("\n")
+        download_log.write("Downloading itdk-run-" + year + month + day + ".addrs" + extension + "\n")
+        download_cmd = subprocess.Popen(["/usr/bin/wget", "-a", "download" + timestamp + ".log", "-S", "-P", location, cim_util.ipv4_itdk_url + year + "-" + month + "/" + "itdk-run-" + year + month + day + ".addrs" + extension ])
+        download_cmd.communicate()
+        cim_util.log_cmd_results(download_cmd, download_log)
 
     download_log.close()
 
 
-def decompress(extension, location):
+def decompress(ipv4, ipv6, extension, location):
     # Prep log file
     decompress_log = open(location + "decompression"+ timestamp + ".log", "a")
 
     #decompress archive files
     if extension == ".bz2":
-        # Decompress IPv4 archives
-        decompress_log.write("IPv4 Archives\n")
-        for file in cim_util.file_types:
-            decompress_log.write("Decompressing " + location + cim_util.ipv4_topo_choice + file + ".bz2\n")
-            decompress_cmd = subprocess.Popen(["/usr/bin/bzip2", "-d", location + cim_util.ipv4_topo_choice + file + ".bz2"])
-            decompress_cmd.communicate()
-
-            decompress_log.write("Return Code: " + str(decompress_cmd.returncode) + "\n")
-
-            decompress_log.write("STDOUT\n")
-            decompress_log.write("==================================================\n")
-            decompress_log.write(str(decompress_cmd.stdout) + "\n")
-
-            decompress_log.write("STDERR\n")
-            decompress_log.write("==================================================\n")
-            decompress_log.write(str(decompress_cmd.stderr) + "\n")
-
-        # Decompress IPv6 archives (no ifaces file for this topology)
-        decompress_log.write("IPv6 Archives\n")
-        for file in cim_util.file_types:
-            if file != ".ifaces":
-                decompress_log.write("Decompressing " + location + cim_util.ipv6_topo_choice + file + ".bz2\n")
-                decompress_cmd = subprocess.Popen(["/usr/bin/bzip2", "-d", location + cim_util.ipv6_topo_choice + file + ".bz2"])
+        if ipv4:
+            # Decompress IPv4 archives
+            decompress_log.write("IPv4 Archives\n")
+            for file in cim_util.file_types:
+                decompress_log.write("Decompressing " + location + cim_util.ipv4_topo_choice + file + ".bz2\n")
+                decompress_cmd = subprocess.Popen(["/usr/bin/bzip2", "-d", location + cim_util.ipv4_topo_choice + file + ".bz2"])
                 decompress_cmd.communicate()
+                cim_util.log_cmd_results(decompress_cmd, decompress_log)
 
-                decompress_log.write("Return Code: " + str(decompress_cmd.returncode) + "\n")
-
-                decompress_log.write("STDOUT\n")
-                decompress_log.write("==================================================\n")
-                decompress_log.write(str(decompress_cmd.stdout) + "\n")
-
-                decompress_log.write("STDERR\n")
-                decompress_log.write("==================================================\n")
-                decompress_log.write(str(decompress_cmd.stderr) + "\n")
+        if ipv6:
+            # Decompress IPv6 archives (no ifaces file for this topology)
+            decompress_log.write("IPv6 Archives\n")
+            for file in cim_util.file_types:
+                if file != ".ifaces":
+                    decompress_log.write("Decompressing " + location + cim_util.ipv6_topo_choice + file + ".bz2\n")
+                    decompress_cmd = subprocess.Popen(["/usr/bin/bzip2", "-d", location + cim_util.ipv6_topo_choice + file + ".bz2"])
+                    decompress_cmd.communicate()
+                    cim_util.log_cmd_results(decompress_cmd, decompress_log)
 
     decompress_log.close()
 
@@ -171,7 +159,7 @@ def read_in_links(ip_version, cursor):
                             print()
                         else:
                             # can't split on : because that's part of IPv6 addresses
-                            n_ID = node_id_pattern.search(token)
+                            n_ID = cim_util.node_id_pattern.search(token)
                             addr = token[n_ID.end() + 2:]
                             ID = n_ID.group()
                             cursor.execute("INSERT INTO ipv6_topology.map_link_to_nodes (link_id, node_id_1, address_1, node_id_2, address_2) VALUES (?, );", (link_ID, ))
@@ -183,7 +171,7 @@ def read_in_links(ip_version, cursor):
     links_file.close()
 
 def clean_db(cursor):
-    curosro.execute()
+    cursor.execute()
 
 def main():
     args = parser.parse_args()
@@ -247,13 +235,13 @@ def main():
     read_in_nodes("IPv4", cursor)
 
     # Read in IPv6 nodes
-    read_in_nodes("IPv6", cursor)
+    # read_in_nodes("IPv6", cursor)
 
     # Read in IPv4 links
     read_in_links("IPv4", cursor)
 
     # Read in IPv6 links
-    read_in_links("IPv6", cursor)
+    # read_in_links("IPv6", cursor)
 
     cnxn.close()
 
