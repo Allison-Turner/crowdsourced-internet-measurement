@@ -7,7 +7,7 @@ def blank_network():
 def neighborhood_diameter(graph):
     return nx.diameter(graph)
 
-# returns node ID if graph alreeady contains a node for this address
+# returns node ID if graph already contains a node for this address
 # returns -1 if graph contains no entry for this address
 def contains_address(graph, address):
 

@@ -65,11 +65,11 @@ name = re.compile("(\w+[:|\.|-]*)+")
 time = re.compile("\d+\.\d+ms")
 
 # Properties for pyodbc connection string
-odbc_driver = "psqlOBDC"
+odbc_driver = "SQLite ODBC Driver"
 db_server = "localhost"
-db_name = "postgres"
-db_user = "postgres"
-db_pwd = "postgres"
+db_name = "main"
+db_user = "aturner4"
+db_pwd = "Smiley13&"
 
 def get_timestamp():
     return strftime("%H-%M-%S-%d-%m-%Y", localtime())

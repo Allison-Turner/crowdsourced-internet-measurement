@@ -181,7 +181,7 @@ def main():
         print("Downloading files from CAIDA data server")
         download_files(args.compression_ext, args.folder_loc, args.day, args.month, args.year)
 
-    #Extract files
+    # Extract files
     if args.extract_files or args.download_files:
         print("Decompressing files")
         decompress(args.compression_ext, args.folder_loc)
