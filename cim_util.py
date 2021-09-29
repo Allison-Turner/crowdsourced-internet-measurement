@@ -68,8 +68,8 @@ time = re.compile("\d+\.\d+ms")
 odbc_driver = "SQLite ODBC Driver"
 db_server = "localhost"
 db_name = "main"
-db_user = "aturner4"
-db_pwd = "Smiley13&"
+db_user = ""
+db_pwd = ""
 
 def get_timestamp():
     return strftime("%H-%M-%S-%d-%m-%Y", localtime())
